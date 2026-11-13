@@ -37,5 +37,13 @@
         "default": "mdi:broom"
       }
     }
+  },
+  "services": {
+    "complete_chore": {
+      "service": "mdi:check-circle-outline"
+    },
+    "undo_completion": {
+      "service": "mdi:undo"
+    }
   }
 }

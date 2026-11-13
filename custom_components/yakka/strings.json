@@ -114,8 +114,59 @@
     "chore_not_found": {
       "message": "No such chore."
     },
+    "chore_ambiguous": {
+      "message": "Several chores have that title. Use the chore's id or one of its entities."
+    },
     "nothing_to_undo": {
       "message": "This chore has no completion to undo."
+    },
+    "entry_not_loaded": {
+      "message": "That Yakka group isn't loaded."
+    },
+    "entry_required": {
+      "message": "Several Yakka groups are set up. Choose one with config_entry_id."
+    }
+  },
+  "services": {
+    "complete_chore": {
+      "name": "Complete chore",
+      "description": "Marks a chore as done in Yakka.",
+      "fields": {
+        "chore": {
+          "name": "Chore",
+          "description": "The chore's title, its Yakka id, or the entity id of any of its entities."
+        },
+        "member": {
+          "name": "Member",
+          "description": "Who did it: a member name or id. Defaults to the matching Home Assistant user, then the default member from the options, then \"Automation\"."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note, up to 500 characters."
+        },
+        "completed_at": {
+          "name": "Completed at",
+          "description": "When it was done. May be up to 14 days ago. Defaults to now."
+        },
+        "config_entry_id": {
+          "name": "Group",
+          "description": "Which Yakka group. Only needed when several are set up."
+        }
+      }
+    },
+    "undo_completion": {
+      "name": "Undo completion",
+      "description": "Undoes a completion in Yakka.",
+      "fields": {
+        "completion_id": {
+          "name": "Completion id",
+          "description": "The completion's id, e.g. from the Last completed sensor's attributes or a complete_chore response."
+        },
+        "config_entry_id": {
+          "name": "Group",
+          "description": "Which Yakka group. Only needed when several are set up."
+        }
+      }
     }
   }
 }

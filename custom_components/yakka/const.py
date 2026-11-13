@@ -36,3 +36,13 @@ STATUSES: Final = [
 ]
 # Statuses that mean "there is something to do now".
 ACTIONABLE_STATUSES: Final = frozenset({STATUS_DUE, STATUS_OVERDUE})
+
+# Services
+SERVICE_COMPLETE_CHORE: Final = "complete_chore"
+SERVICE_UNDO_COMPLETION: Final = "undo_completion"
+ATTR_CONFIG_ENTRY_ID: Final = "config_entry_id"
+ATTR_CHORE: Final = "chore"
+ATTR_MEMBER: Final = "member"
+ATTR_NOTE: Final = "note"
+ATTR_COMPLETED_AT: Final = "completed_at"
+ATTR_COMPLETION_ID: Final = "completion_id"

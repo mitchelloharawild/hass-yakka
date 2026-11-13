@@ -4,14 +4,23 @@ from __future__ import annotations
 
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.typing import ConfigType
 
 from .api import YakkaClient
 from .const import CONF_BASE_URL, CONF_GROUP_ID, CONF_TOKEN, DOMAIN
 from .coordinator import YakkaConfigEntry, YakkaCoordinator
+from .services import async_setup_services
 
 PLATFORMS: list[Platform] = [Platform.BUTTON, Platform.SENSOR, Platform.TODO]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the integration's actions."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YakkaConfigEntry) -> bool:

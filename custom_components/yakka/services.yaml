@@ -1,0 +1,33 @@
+complete_chore:
+  fields:
+    chore:
+      required: true
+      example: "Take out the bins"
+      selector:
+        text:
+    member:
+      example: "Alex"
+      selector:
+        text:
+    note:
+      selector:
+        text:
+          multiline: true
+    completed_at:
+      selector:
+        datetime:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: yakka
+
+undo_completion:
+  fields:
+    completion_id:
+      required: true
+      selector:
+        text:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: yakka
