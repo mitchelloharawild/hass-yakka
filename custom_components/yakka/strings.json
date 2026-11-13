@@ -1,0 +1,94 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect a Yakka group",
+        "description": "Open your group in Yakka and copy its link from the address bar. Then create an API token on the group's **Integrations** page.",
+        "data": {
+          "group_url": "Group link",
+          "token": "API token"
+        },
+        "data_description": {
+          "group_url": "For example https://yakka.nectric.com.au/groups/…",
+          "token": "Starts with yk_. It's shown once when you create it."
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API token for {group}",
+        "description": "The API token for {group} was revoked or no longer works. Create a new one on the group's **Integrations** page.",
+        "data": {
+          "token": "API token"
+        }
+      },
+      "reconfigure": {
+        "title": "Update the Yakka group",
+        "description": "Use this if the group moved to a different address, or to swap the API token.",
+        "data": {
+          "group_url": "Group link",
+          "token": "API token"
+        }
+      }
+    },
+    "error": {
+      "invalid_link": "That doesn't look like a Yakka group link. It should contain /groups/ followed by the group id.",
+      "invalid_auth": "The API token is invalid or has been revoked.",
+      "group_mismatch": "This API token belongs to a different group.",
+      "cannot_connect": "Couldn't reach Yakka at that address.",
+      "not_yakka": "The server answered, but not like Yakka does. Check the link.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This group is already set up.",
+      "reauth_successful": "The API token was updated.",
+      "reconfigure_successful": "The group was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Yakka options",
+        "data": {
+          "default_member": "Record completions as",
+          "match_users": "Match Home Assistant users to members",
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "default_member": "Who chores ticked off from Home Assistant are recorded as. \"Automation\" records them without a member.",
+          "match_users": "When a Home Assistant user ticks a chore off and their name matches a Yakka member, record it as that member instead.",
+          "scan_interval": "How often to poll Yakka for changes."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "upcoming": "Upcoming",
+          "due": "Due",
+          "overdue": "Overdue",
+          "done": "Done",
+          "unscheduled": "Unscheduled"
+        }
+      },
+      "next_due": {
+        "name": "Next due"
+      },
+      "last_completed": {
+        "name": "Last completed"
+      },
+      "assignee": {
+        "name": "Whose turn"
+      },
+      "due_chores": {
+        "name": "Due chores",
+        "unit_of_measurement": "chores"
+      },
+      "overdue_chores": {
+        "name": "Overdue chores",
+        "unit_of_measurement": "chores"
+      }
+    }
+  }
+}

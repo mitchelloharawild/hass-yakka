@@ -1,0 +1,31 @@
+{
+  "entity": {
+    "sensor": {
+      "status": {
+        "default": "mdi:broom",
+        "state": {
+          "upcoming": "mdi:calendar-clock",
+          "due": "mdi:bell-ring-outline",
+          "overdue": "mdi:alert-circle-outline",
+          "done": "mdi:check-circle",
+          "unscheduled": "mdi:calendar-blank-outline"
+        }
+      },
+      "next_due": {
+        "default": "mdi:calendar-clock"
+      },
+      "last_completed": {
+        "default": "mdi:history"
+      },
+      "assignee": {
+        "default": "mdi:account-arrow-right"
+      },
+      "due_chores": {
+        "default": "mdi:bell-ring-outline"
+      },
+      "overdue_chores": {
+        "default": "mdi:alert-circle-outline"
+      }
+    }
+  }
+}

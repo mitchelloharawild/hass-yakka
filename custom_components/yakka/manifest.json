@@ -1,0 +1,14 @@
+{
+  "domain": "yakka",
+  "name": "Yakka",
+  "codeowners": [
+    "@mitchelloharawild"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/mitchelloharawild/hass-yakka",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/mitchelloharawild/hass-yakka/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
