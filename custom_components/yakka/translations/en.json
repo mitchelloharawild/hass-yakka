@@ -50,15 +50,21 @@
         "data": {
           "default_member": "Record completions as",
           "match_users": "Match Home Assistant users to members",
+          "link_users": "Choose a member for each Home Assistant user",
           "scan_interval": "Update interval",
           "enable_webhook": "Receive Yakka webhooks"
         },
         "data_description": {
           "default_member": "Who chores ticked off from Home Assistant are recorded as. \"Automation\" records them without a member.",
-          "match_users": "When a Home Assistant user ticks a chore off and their name matches a Yakka member, record it as that member instead.",
+          "match_users": "When a Home Assistant user ticks a chore off and their name matches a Yakka member, record it as that member instead. Users you link to a member below always use that member.",
+          "link_users": "Pick which Yakka member each Home Assistant user records completions as. Turning this off removes the links.",
           "scan_interval": "How often to poll Yakka for changes.",
           "enable_webhook": "Get instant updates and a yakka_event for every completion, undo, due and overdue chore."
         }
+      },
+      "users": {
+        "title": "Home Assistant users",
+        "description": "Choose who each Home Assistant user's completions are recorded as. **Match by name** uses the member with the same name, if \"Match Home Assistant users to members\" is on. **Record as the default** always uses the default member. If a linked member is archived, matching by name is used instead."
       },
       "webhook": {
         "title": "Yakka webhook",

@@ -37,18 +37,22 @@ from .const import (
     CONF_MATCH_USERS,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
+    CONF_USER_MEMBERS,
     CONF_WEBHOOK_ID,
     CONF_WEBHOOK_SECRET,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL_MINUTES,
     MIN_SCAN_INTERVAL_MINUTES,
+    USE_DEFAULT_MEMBER,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 CONF_ENABLE_WEBHOOK = "enable_webhook"
+CONF_LINK_USERS = "link_users"
 NO_MEMBER = "__automation__"
+MATCH_BY_NAME = "__match__"
 
 PASSWORD = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 URL = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
@@ -195,29 +199,44 @@ class YakkaOptionsFlow(OptionsFlow):
         """Initialise the flow."""
         self._options: dict[str, Any] = {}
         self._webhook_id: str | None = None
+        self._enable_webhook = False
+        # Form field name (the user's name) -> Home Assistant user id.
+        self._user_fields: dict[str, str] = {}
+
+    def _active_members(self) -> list[SelectOptionDict]:
+        coordinator = getattr(self.config_entry, "runtime_data", None)
+        if coordinator is None or coordinator.data is None:
+            return []
+        return [
+            SelectOptionDict(value=m.id, label=m.name)
+            for m in coordinator.data.members.values()
+            if not m.archived
+        ]
+
+    async def _async_next(self) -> ConfigFlowResult:
+        if self._enable_webhook:
+            return await self.async_step_webhook()
+        return self.async_create_entry(data=self._options)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """General options."""
         options = self.config_entry.options
         if user_input is not None:
-            enable_webhook = user_input.pop(CONF_ENABLE_WEBHOOK)
+            self._enable_webhook = user_input.pop(CONF_ENABLE_WEBHOOK)
+            link_users = user_input.pop(CONF_LINK_USERS)
             member = user_input.get(CONF_DEFAULT_MEMBER)
             if member in (None, NO_MEMBER):
                 user_input.pop(CONF_DEFAULT_MEMBER, None)
             user_input[CONF_SCAN_INTERVAL] = int(user_input[CONF_SCAN_INTERVAL])
             self._options = user_input
-            if enable_webhook:
-                return await self.async_step_webhook()
-            return self.async_create_entry(data=self._options)
+            if link_users:
+                return await self.async_step_users()
+            return await self._async_next()
 
-        member_options = [SelectOptionDict(value=NO_MEMBER, label="Automation")]
-        coordinator = getattr(self.config_entry, "runtime_data", None)
-        if coordinator is not None and coordinator.data is not None:
-            member_options += [
-                SelectOptionDict(value=m.id, label=m.name)
-                for m in coordinator.data.members.values()
-                if not m.archived
-            ]
+        member_options = [
+            SelectOptionDict(value=NO_MEMBER, label="Automation"),
+            *self._active_members(),
+        ]
         default_minutes = int(DEFAULT_SCAN_INTERVAL.total_seconds() // 60)
         schema = vol.Schema(
             {
@@ -229,6 +248,10 @@ class YakkaOptionsFlow(OptionsFlow):
                 ),
                 vol.Required(
                     CONF_MATCH_USERS, default=options.get(CONF_MATCH_USERS, True)
+                ): BooleanSelector(),
+                vol.Required(
+                    CONF_LINK_USERS,
+                    default=bool(options.get(CONF_USER_MEMBERS)),
                 ): BooleanSelector(),
                 vol.Required(
                     CONF_SCAN_INTERVAL,
@@ -249,6 +272,57 @@ class YakkaOptionsFlow(OptionsFlow):
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
+
+    async def async_step_users(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Choose the Yakka member for each Home Assistant user."""
+        if user_input is not None:
+            links = {
+                self._user_fields[field]: choice
+                for field, choice in user_input.items()
+                if field in self._user_fields and choice != MATCH_BY_NAME
+            }
+            if links:
+                self._options[CONF_USER_MEMBERS] = links
+            return await self._async_next()
+
+        users = sorted(
+            (
+                u
+                for u in await self.hass.auth.async_get_users()
+                if u.is_active and not u.system_generated
+            ),
+            key=lambda u: (u.name or "").casefold(),
+        )
+        # Fields are named after the users so the form reads naturally.
+        self._user_fields = {}
+        for user in users:
+            base = (user.name or "").strip() or user.id
+            field, n = base, 2
+            while field in self._user_fields:
+                field, n = f"{base} ({n})", n + 1
+            self._user_fields[field] = user.id
+
+        members = self._active_members()
+        choices = [
+            SelectOptionDict(value=MATCH_BY_NAME, label="Match by name"),
+            SelectOptionDict(value=USE_DEFAULT_MEMBER, label="Record as the default"),
+            *members,
+        ]
+        valid = {c["value"] for c in choices}
+        links = self.config_entry.options.get(CONF_USER_MEMBERS, {})
+        selector = SelectSelector(
+            SelectSelectorConfig(options=choices, mode=SelectSelectorMode.DROPDOWN)
+        )
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    field,
+                    default=(links[user_id] if links.get(user_id) in valid else MATCH_BY_NAME),
+                ): selector
+                for field, user_id in self._user_fields.items()
+            }
+        )
+        return self.async_show_form(step_id="users", data_schema=schema)
 
     async def async_step_webhook(
         self, user_input: dict[str, Any] | None = None

@@ -16,9 +16,11 @@ from custom_components.yakka.const import (
     CONF_MATCH_USERS,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
+    CONF_USER_MEMBERS,
     CONF_WEBHOOK_ID,
     CONF_WEBHOOK_SECRET,
     DOMAIN,
+    USE_DEFAULT_MEMBER,
 )
 
 
@@ -97,6 +99,7 @@ async def test_options_with_webhook(hass: HomeAssistant, aioclient_mock) -> None
             CONF_DEFAULT_MEMBER: "m2",
             CONF_MATCH_USERS: False,
             CONF_SCAN_INTERVAL: 10,
+            "link_users": False,
             "enable_webhook": True,
         },
     )
@@ -117,3 +120,59 @@ async def test_options_with_webhook(hass: HomeAssistant, aioclient_mock) -> None
     assert entry.options[CONF_SCAN_INTERVAL] == 10
     assert entry.options[CONF_WEBHOOK_SECRET] == "whsec_abc"
     assert url.endswith(entry.options[CONF_WEBHOOK_ID])
+
+
+async def test_options_link_users(
+    hass: HomeAssistant, aioclient_mock, hass_admin_user, hass_read_only_user
+) -> None:
+    await hass.auth.async_update_user(hass_admin_user, name="Pat")
+    await hass.auth.async_update_user(hass_read_only_user, name="Pat")
+    mock_api(aioclient_mock)
+    entry = make_entry()
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_DEFAULT_MEMBER: "__automation__",
+            CONF_MATCH_USERS: True,
+            CONF_SCAN_INTERVAL: 5,
+            "link_users": True,
+            "enable_webhook": False,
+        },
+    )
+    assert result["step_id"] == "users"
+    # One field per user, named after them; a repeated name gets a suffix.
+    assert {str(key) for key in result["data_schema"].schema} == {"Pat", "Pat (2)"}
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"Pat": "m2", "Pat (2)": USE_DEFAULT_MEMBER},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert sorted(entry.options[CONF_USER_MEMBERS].values()) == [USE_DEFAULT_MEMBER, "m2"]
+    assert set(entry.options[CONF_USER_MEMBERS]) == {
+        hass_admin_user.id,
+        hass_read_only_user.id,
+    }
+    assert CONF_DEFAULT_MEMBER not in entry.options
+
+    # The links are shown again next time, and turning the switch off clears them.
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    schema = result["data_schema"].schema
+    assert next(k for k in schema if k == "link_users").default() is True
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_DEFAULT_MEMBER: "__automation__",
+            CONF_MATCH_USERS: True,
+            CONF_SCAN_INTERVAL: 5,
+            "link_users": False,
+            "enable_webhook": False,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert CONF_USER_MEMBERS not in entry.options

@@ -16,8 +16,13 @@ CONF_TOKEN: Final = "token"
 CONF_DEFAULT_MEMBER: Final = "default_member"
 CONF_MATCH_USERS: Final = "match_users"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
+# {Home Assistant user id: Yakka member id, or USE_DEFAULT_MEMBER}
+CONF_USER_MEMBERS: Final = "user_members"
 CONF_WEBHOOK_ID: Final = "webhook_id"
 CONF_WEBHOOK_SECRET: Final = "webhook_secret"
+
+# A user linked to this records as the default member, never matched by name.
+USE_DEFAULT_MEMBER: Final = "__default__"
 
 DEFAULT_SCAN_INTERVAL: Final = timedelta(minutes=5)
 MIN_SCAN_INTERVAL_MINUTES: Final = 1

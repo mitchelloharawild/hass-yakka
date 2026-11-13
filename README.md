@@ -32,10 +32,23 @@ Chores added in Yakka show up automatically. Archived or deleted chores are remo
 A chore completed from Home Assistant (button, to-do list or action) is
 recorded as:
 
-1. the Yakka member whose name matches the Home Assistant user who did it
-   (ignoring case), if "Match Home Assistant users to members" is on (the default);
-2. otherwise the default member chosen in the options;
-3. otherwise "Automation".
+1. the member linked to the Home Assistant user who did it, if you've linked
+   them in the options (see below);
+2. otherwise the Yakka member whose name matches that user's name (ignoring
+   case), if "Match Home Assistant users to members" is on (the default);
+3. otherwise the default member chosen in the options;
+4. otherwise "Automation".
+
+To link users, turn on **Choose a member for each Home Assistant user** in the
+options. You'll then get a dropdown for each Home Assistant user, with these
+choices:
+
+- **Match by name**: the default; uses step 2.
+- **Record as the default**: skips name matching.
+- A specific member.
+
+Automations and scripts usually don't run as a user, so they get the default
+member.
 
 The `yakka.complete_chore` action can also name the member directly.
 
@@ -65,7 +78,8 @@ served from a subpath.
 ## Options
 
 - **Record completions as**: the default member for completions from Home Assistant.
-- **Match Home Assistant users to members**: see [Who gets credit](#who-gets-credit).
+- **Match Home Assistant users to members** and **Choose a member for each
+  Home Assistant user**: see [Who gets credit](#who-gets-credit).
 - **Update interval**: how often to poll Yakka (default 5 minutes).
 - **Receive Yakka webhooks**: see below.
 

@@ -17,8 +17,10 @@ from .const import (
     CONF_DEFAULT_MEMBER,
     CONF_MATCH_USERS,
     CONF_SCAN_INTERVAL,
+    CONF_USER_MEMBERS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    USE_DEFAULT_MEMBER,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -74,15 +76,23 @@ class YakkaCoordinator(DataUpdateCoordinator[YakkaData]):
     async def async_member_for_context(self, context: Context | None) -> str | None:
         """Pick the Yakka member to record a completion from Home Assistant as.
 
-        If the "match users" option is on and the Home Assistant user who
-        triggered the action has the same name as exactly one active Yakka
-        member (ignoring case), that member is used. Otherwise the default
-        member from the options, if any. Otherwise None, which Yakka records
-        as "Automation".
+        1. If the Home Assistant user who triggered the action is linked to a
+           member in the options, and that member is still active, that
+           member. A user linked to "the default" skips straight to step 3.
+        2. If the "match users" option is on and the user has the same name
+           as exactly one active Yakka member (ignoring case), that member.
+        3. The default member from the options, if any.
+        4. None, which Yakka records as "Automation".
         """
         options = self.config_entry.options
-        if options.get(CONF_MATCH_USERS, True) and context and context.user_id:
-            user = await self.hass.auth.async_get_user(context.user_id)
+        user_id = context.user_id if context else None
+        linked = options.get(CONF_USER_MEMBERS, {}).get(user_id) if user_id else None
+        if linked and linked != USE_DEFAULT_MEMBER and self.data:
+            member = self.data.members.get(linked)
+            if member and not member.archived:
+                return member.id
+        if linked != USE_DEFAULT_MEMBER and options.get(CONF_MATCH_USERS, True) and user_id:
+            user = await self.hass.auth.async_get_user(user_id)
             if user and user.name and self.data:
                 wanted = user.name.strip().casefold()
                 matches = [

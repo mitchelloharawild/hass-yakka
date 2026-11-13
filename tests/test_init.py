@@ -11,12 +11,21 @@ from pytest_homeassistant_custom_component.common import async_capture_events
 
 from homeassistant.components.todo import DOMAIN as TODO_DOMAIN
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from .fixtures import chore, completion
 from .helpers import API, make_entry, mock_api
-from custom_components.yakka.const import CONF_WEBHOOK_ID, CONF_WEBHOOK_SECRET, DOMAIN, EVENT_YAKKA
+from custom_components.yakka.const import (
+    CONF_DEFAULT_MEMBER,
+    CONF_MATCH_USERS,
+    CONF_USER_MEMBERS,
+    CONF_WEBHOOK_ID,
+    CONF_WEBHOOK_SECRET,
+    DOMAIN,
+    EVENT_YAKKA,
+    USE_DEFAULT_MEMBER,
+)
 
 
 def _entity_id(hass: HomeAssistant, platform: str, suffix: str) -> str:
@@ -113,6 +122,28 @@ async def test_button_and_todo_complete(hass: HomeAssistant, aioclient_mock) -> 
     assert hass.states.get(_entity_id(hass, "todo", "_chores")).state == "1"
 
 
+async def test_member_for_user(hass: HomeAssistant, aioclient_mock, hass_admin_user) -> None:
+    entry = await _setup(hass, aioclient_mock)
+    ctx = Context(user_id=hass_admin_user.id)
+
+    async def credited(**options):
+        hass.config_entries.async_update_entry(entry, options=options)
+        await hass.async_block_till_done()
+        return await entry.runtime_data.async_member_for_context(ctx)
+
+    await hass.auth.async_update_user(hass_admin_user, name="alex")
+    # Matched by name (ignoring case), and not for other users or automations.
+    assert await credited(**{CONF_DEFAULT_MEMBER: "m2"}) == "m1"
+    assert await entry.runtime_data.async_member_for_context(Context()) == "m2"
+    assert await credited(**{CONF_MATCH_USERS: False}) is None
+    # A link beats the name match...
+    assert await credited(**{CONF_USER_MEMBERS: {hass_admin_user.id: "m2"}}) == "m2"
+    # ...unless the linked member no longer exists.
+    assert await credited(**{CONF_USER_MEMBERS: {hass_admin_user.id: "gone"}}) == "m1"
+    # Linking to the default skips the name match.
+    assert await credited(**{CONF_USER_MEMBERS: {hass_admin_user.id: USE_DEFAULT_MEMBER}}) is None
+
+
 async def test_complete_chore_action(hass: HomeAssistant, aioclient_mock) -> None:
     await _setup(hass, aioclient_mock)
     aioclient_mock.post(
@@ -161,9 +192,8 @@ async def test_webhook(hass: HomeAssistant, aioclient_mock, hass_client_no_auth)
     assert resp.status == 401
     resp = await client.post("/api/webhook/hook123", data=body, headers=headers)
     assert resp.status == 204
-    resp = await client.post(
-        "/api/webhook/hook123", data=body, headers=headers
-    )  # retry, deduplicated
+    # A retry of the same event is accepted but not fired twice.
+    resp = await client.post("/api/webhook/hook123", data=body, headers=headers)
     assert resp.status == 204
     await hass.async_block_till_done()
     assert len(events) == 1
