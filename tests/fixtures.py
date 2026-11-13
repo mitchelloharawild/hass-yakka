@@ -51,7 +51,14 @@ def chore(cid="ch1", title="Bins", status="overdue", icon="🗑️", last=None, 
 CHORES = {
     "chores": [
         chore(),
-        chore("ch2", "Dishes", status="upcoming", icon=None, last=completion("c2", "ch2"), assignee=None),
+        chore(
+            "ch2",
+            "Dishes",
+            status="upcoming",
+            icon=None,
+            last=completion("c2", "ch2"),
+            assignee=None,
+        ),
     ]
 }
 

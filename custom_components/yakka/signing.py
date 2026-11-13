@@ -22,7 +22,8 @@ def verify_signature(
         return False
     if abs((time.time() if now is None else now) - int(timestamp)) > MAX_SKEW:
         return False
-    expected = "sha256=" + hmac.new(
-        secret.encode(), timestamp.encode() + b"." + body, hashlib.sha256
-    ).hexdigest()
+    expected = (
+        "sha256="
+        + hmac.new(secret.encode(), timestamp.encode() + b"." + body, hashlib.sha256).hexdigest()
+    )
     return hmac.compare_digest(signature, expected)

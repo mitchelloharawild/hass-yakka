@@ -160,9 +160,7 @@ class GroupCountSensor(YakkaGroupEntity, SensorEntity):
 
     entity_description: GroupSensorDescription
 
-    def __init__(
-        self, coordinator: YakkaCoordinator, description: GroupSensorDescription
-    ) -> None:
+    def __init__(self, coordinator: YakkaCoordinator, description: GroupSensorDescription) -> None:
         """Initialise the sensor."""
         super().__init__(coordinator, description.key)
         self.entity_description = description

@@ -206,9 +206,7 @@ class YakkaClient:
         }
         try:
             async with asyncio.timeout(REQUEST_TIMEOUT):
-                resp = await self._session.request(
-                    method, url, headers=headers, json=json
-                )
+                resp = await self._session.request(method, url, headers=headers, json=json)
                 try:
                     body: Any = await resp.json(content_type=None)
                 except (aiohttp.ContentTypeError, ValueError):
@@ -267,9 +265,7 @@ class YakkaClient:
             payload["note"] = note
         if completed_at:
             payload["completedAt"] = completed_at.isoformat()
-        return await self._request(
-            "POST", f"/chores/{chore_id}/complete", json=payload
-        )
+        return await self._request("POST", f"/chores/{chore_id}/complete", json=payload)
 
     async def undo_completion(self, completion_id: str) -> dict[str, Any]:
         """Undo a completion. Undoing twice is harmless."""

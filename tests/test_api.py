@@ -16,6 +16,22 @@ api = load_standalone("api")
 signing = load_standalone("signing")
 
 
+@pytest.fixture(autouse=True)
+def _allow_sockets():
+    """These tests talk to a local fake server.
+
+    The Home Assistant test plugin, when installed, blocks sockets.
+    """
+    try:
+        import pytest_socket
+    except ImportError:
+        yield
+        return
+    pytest_socket.enable_socket()
+    yield
+    pytest_socket.disable_socket(allow_unix_socket=True)
+
+
 @pytest.mark.parametrize(
     ("link", "expected"),
     [
@@ -33,7 +49,13 @@ def test_parse_group_link(link, expected):
 
 @pytest.mark.parametrize(
     "link",
-    ["", "https://yakka.example/", "https://yakka.example/groups/", "ftp://x/groups/a", "https:///groups/a"],
+    [
+        "",
+        "https://yakka.example/",
+        "https://yakka.example/groups/",
+        "ftp://x/groups/a",
+        "https:///groups/a",
+    ],
 )
 def test_parse_group_link_rejects(link):
     with pytest.raises(ValueError):
@@ -50,7 +72,9 @@ def test_chore_from_json():
 
 
 def _sign(secret, ts, body):
-    return "sha256=" + hmac.new(secret.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
+    return (
+        "sha256=" + hmac.new(secret.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
+    )
 
 
 def test_verify_signature():
@@ -98,8 +122,12 @@ async def server(aiohttp_server):
                 {"error": {"code": "MEMBER_NOT_FOUND", "message": "No member"}}, status=404
             )
         return web.json_response(
-            {"completion": completion(), "deduplicated": False, "nextDueAt": None,
-             "chore": chore(status="upcoming")},
+            {
+                "completion": completion(),
+                "deduplicated": False,
+                "nextDueAt": None,
+                "chore": chore(status="upcoming"),
+            },
             status=201,
         )
 

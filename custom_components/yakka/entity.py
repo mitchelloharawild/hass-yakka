@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 
 from homeassistant.core import callback
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import Chore
@@ -93,7 +93,7 @@ def add_chore_entities(
         # unarchived chore gets fresh entities.
         if coordinator.last_update_success:
             known.intersection_update(coordinator.data.chores)
-        new =[c for cid, c in coordinator.data.chores.items() if cid not in known]
+        new = [c for cid, c in coordinator.data.chores.items() if cid not in known]
         if not new:
             return
         known.update(c.id for c in new)

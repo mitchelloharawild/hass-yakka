@@ -39,9 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YakkaConfigEntry) -> boo
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     async_register_webhook(hass, entry)
 
-    entry.async_on_unload(
-        coordinator.async_add_listener(_stale_device_remover(hass, entry))
-    )
+    entry.async_on_unload(coordinator.async_add_listener(_stale_device_remover(hass, entry)))
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     return True
 
@@ -76,9 +74,7 @@ def _stale_device_remover(hass: HomeAssistant, entry: YakkaConfigEntry):
         for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
             chore_id = _chore_id_of(entry, device)
             if chore_id and chore_id not in coordinator.data.chores:
-                registry.async_update_device(
-                    device.id, remove_config_entry_id=entry.entry_id
-                )
+                registry.async_update_device(device.id, remove_config_entry_id=entry.entry_id)
 
     return _remove
 

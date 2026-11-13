@@ -67,9 +67,7 @@ def _coordinator(hass: HomeAssistant, entry_id: str | None) -> YakkaCoordinator:
         return entry.runtime_data
     loaded = _loaded_coordinators(hass)
     if len(loaded) != 1:
-        raise ServiceValidationError(
-            translation_domain=DOMAIN, translation_key="entry_required"
-        )
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_required")
     return loaded[0]
 
 
@@ -85,13 +83,9 @@ def _resolve_chore(
             for chore_id in coordinator.data.chores:
                 if rest.startswith(f"{chore_id}_"):
                     return coordinator, chore_id
-        raise ServiceValidationError(
-            translation_domain=DOMAIN, translation_key="chore_not_found"
-        )
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="chore_not_found")
 
-    candidates = (
-        [_coordinator(hass, entry_id)] if entry_id else _loaded_coordinators(hass)
-    )
+    candidates = [_coordinator(hass, entry_id)] if entry_id else _loaded_coordinators(hass)
     for coordinator in candidates:
         if chore in coordinator.data.chores:
             return coordinator, chore

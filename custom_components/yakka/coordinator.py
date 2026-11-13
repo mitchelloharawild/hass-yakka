@@ -39,9 +39,7 @@ class YakkaCoordinator(DataUpdateCoordinator[YakkaData]):
 
     config_entry: YakkaConfigEntry
 
-    def __init__(
-        self, hass: HomeAssistant, entry: YakkaConfigEntry, client: YakkaClient
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, entry: YakkaConfigEntry, client: YakkaClient) -> None:
         """Initialise the coordinator."""
         minutes = entry.options.get(CONF_SCAN_INTERVAL)
         super().__init__(
@@ -49,9 +47,7 @@ class YakkaCoordinator(DataUpdateCoordinator[YakkaData]):
             _LOGGER,
             config_entry=entry,
             name=f"{DOMAIN} {entry.title}",
-            update_interval=(
-                timedelta(minutes=minutes) if minutes else DEFAULT_SCAN_INTERVAL
-            ),
+            update_interval=(timedelta(minutes=minutes) if minutes else DEFAULT_SCAN_INTERVAL),
         )
         self.client = client
 

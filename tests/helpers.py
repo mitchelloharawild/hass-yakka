@@ -5,10 +5,9 @@ from __future__ import annotations
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
+from .fixtures import CHORES, EXPORT, GROUP_ID, MEMBERS, TOKEN
 from custom_components.yakka.config_flow import group_unique_id
 from custom_components.yakka.const import CONF_BASE_URL, CONF_GROUP_ID, CONF_TOKEN, DOMAIN
-
-from .fixtures import CHORES, EXPORT, GROUP_ID, MEMBERS, TOKEN
 
 BASE = "https://yakka.example"
 API = f"{BASE}/api/v1/groups/{GROUP_ID}"

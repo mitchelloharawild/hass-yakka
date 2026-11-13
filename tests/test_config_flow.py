@@ -6,6 +6,8 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
+from .fixtures import GROUP_ID, TOKEN
+from .helpers import API, BASE, make_entry, mock_api
 from custom_components.yakka.const import (
     CONF_BASE_URL,
     CONF_DEFAULT_MEMBER,
@@ -18,9 +20,6 @@ from custom_components.yakka.const import (
     CONF_WEBHOOK_SECRET,
     DOMAIN,
 )
-
-from .fixtures import GROUP_ID, TOKEN
-from .helpers import API, BASE, make_entry, mock_api
 
 
 async def test_user_flow(hass: HomeAssistant, aioclient_mock) -> None:

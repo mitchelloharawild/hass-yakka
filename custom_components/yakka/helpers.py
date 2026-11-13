@@ -33,9 +33,7 @@ def _raise(err: YakkaError) -> None:
             translation_placeholders={"code": err.code, "message": str(err)},
         ) from err
     if isinstance(err, YakkaAuthError):
-        raise HomeAssistantError(
-            translation_domain=DOMAIN, translation_key="auth_failed"
-        ) from err
+        raise HomeAssistantError(translation_domain=DOMAIN, translation_key="auth_failed") from err
     raise HomeAssistantError(
         translation_domain=DOMAIN,
         translation_key="request_failed",

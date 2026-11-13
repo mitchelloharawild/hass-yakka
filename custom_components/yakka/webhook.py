@@ -34,9 +34,7 @@ def async_register_webhook(hass: HomeAssistant, entry: YakkaConfigEntry) -> None
 
     seen: deque[str] = deque(maxlen=200)
 
-    async def _handle(
-        hass: HomeAssistant, webhook_id: str, request: web.Request
-    ) -> web.Response:
+    async def _handle(hass: HomeAssistant, webhook_id: str, request: web.Request) -> web.Response:
         if request.content_length and request.content_length > MAX_BODY:
             return web.Response(status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         body = await request.read()

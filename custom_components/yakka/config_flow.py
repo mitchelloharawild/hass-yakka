@@ -10,12 +10,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components import webhook
-from homeassistant.config_entries import (
-    ConfigEntry,
-    ConfigFlow,
-    ConfigFlowResult,
-    OptionsFlow,
-)
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.network import NoURLAvailableError
@@ -110,9 +105,7 @@ class YakkaConfigFlow(ConfigFlow, domain=DOMAIN):
         """Options for an entry."""
         return YakkaOptionsFlow()
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Ask for the group link and an API token."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -140,9 +133,7 @@ class YakkaConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, entry_data: Mapping[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
         """The token stopped working."""
         return await self.async_step_reauth_confirm()
 
@@ -205,9 +196,7 @@ class YakkaOptionsFlow(OptionsFlow):
         self._options: dict[str, Any] = {}
         self._webhook_id: str | None = None
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """General options."""
         options = self.config_entry.options
         if user_input is not None:
@@ -236,9 +225,7 @@ class YakkaOptionsFlow(OptionsFlow):
                     CONF_DEFAULT_MEMBER,
                     default=options.get(CONF_DEFAULT_MEMBER, NO_MEMBER),
                 ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=member_options, mode=SelectSelectorMode.DROPDOWN
-                    )
+                    SelectSelectorConfig(options=member_options, mode=SelectSelectorMode.DROPDOWN)
                 ),
                 vol.Required(
                     CONF_MATCH_USERS, default=options.get(CONF_MATCH_USERS, True)
