@@ -16,6 +16,8 @@ CONF_TOKEN: Final = "token"
 CONF_DEFAULT_MEMBER: Final = "default_member"
 CONF_MATCH_USERS: Final = "match_users"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
+CONF_WEBHOOK_ID: Final = "webhook_id"
+CONF_WEBHOOK_SECRET: Final = "webhook_secret"
 
 DEFAULT_SCAN_INTERVAL: Final = timedelta(minutes=5)
 MIN_SCAN_INTERVAL_MINUTES: Final = 1
@@ -36,6 +38,9 @@ STATUSES: Final = [
 ]
 # Statuses that mean "there is something to do now".
 ACTIONABLE_STATUSES: Final = frozenset({STATUS_DUE, STATUS_OVERDUE})
+
+# Event fired on the Home Assistant bus for every verified Yakka webhook.
+EVENT_YAKKA: Final = "yakka_event"
 
 # Services
 SERVICE_COMPLETE_CHORE: Final = "complete_chore"

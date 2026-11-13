@@ -1,7 +1,9 @@
-"""Tests for the HA-free API client."""
+"""Tests for the HA-free API client and signature check."""
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 
 from aiohttp import ClientSession, web
@@ -11,6 +13,7 @@ from .conftest import load_standalone
 from .fixtures import CHORES, EXPORT, GROUP_ID, MEMBERS, TOKEN, chore, completion
 
 api = load_standalone("api")
+signing = load_standalone("signing")
 
 
 @pytest.mark.parametrize(
@@ -44,6 +47,22 @@ def test_chore_from_json():
     assert c.next_due_at.isoformat() == "2026-11-14T09:00:00+00:00"
     assert c.last_completion.member_name == "Alex"
     assert api.Chore.from_json(chore(icon=None)).display_name == "Bins"
+
+
+def _sign(secret, ts, body):
+    return "sha256=" + hmac.new(secret.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
+
+
+def test_verify_signature():
+    body = b'{"type":"ping"}'
+    sig = _sign("whsec_x", 1000, body)
+    assert signing.verify_signature("whsec_x", "1000", sig, body, now=1000)
+    assert signing.verify_signature("whsec_x", "1000", sig, body, now=1299)
+    assert not signing.verify_signature("whsec_x", "1000", sig, body, now=1301)  # stale
+    assert not signing.verify_signature("whsec_y", "1000", sig, body, now=1000)  # wrong secret
+    assert not signing.verify_signature("whsec_x", "1000", sig, body + b" ", now=1000)  # tampered
+    assert not signing.verify_signature("whsec_x", None, sig, body, now=1000)
+    assert not signing.verify_signature("whsec_x", "abc", sig, body, now=1000)
 
 
 @pytest.fixture

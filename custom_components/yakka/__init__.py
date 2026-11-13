@@ -12,6 +12,7 @@ from .api import YakkaClient
 from .const import CONF_BASE_URL, CONF_GROUP_ID, CONF_TOKEN, DOMAIN
 from .coordinator import YakkaConfigEntry, YakkaCoordinator
 from .services import async_setup_services
+from .webhook import async_register_webhook
 
 PLATFORMS: list[Platform] = [Platform.BUTTON, Platform.SENSOR, Platform.TODO]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -36,6 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YakkaConfigEntry) -> boo
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_register_webhook(hass, entry)
 
     entry.async_on_unload(
         coordinator.async_add_listener(_stale_device_remover(hass, entry))

@@ -1,4 +1,4 @@
-"""Diagnostics for Yakka. Secrets (group id, token) are redacted."""
+"""Diagnostics for Yakka. Secrets (group id, token, webhook) are redacted."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ from typing import Any
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_GROUP_ID, CONF_TOKEN
+from .const import CONF_GROUP_ID, CONF_TOKEN, CONF_WEBHOOK_ID, CONF_WEBHOOK_SECRET
 from .coordinator import YakkaConfigEntry
 
-TO_REDACT = {CONF_GROUP_ID, CONF_TOKEN}
+TO_REDACT = {CONF_GROUP_ID, CONF_TOKEN, CONF_WEBHOOK_ID, CONF_WEBHOOK_SECRET}
 
 
 async def async_get_config_entry_diagnostics(

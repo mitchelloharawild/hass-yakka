@@ -9,6 +9,7 @@ from typing import Any
 
 import voluptuous as vol
 
+from homeassistant.components import webhook
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -17,6 +18,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.network import NoURLAvailableError
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -40,6 +42,8 @@ from .const import (
     CONF_MATCH_USERS,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
+    CONF_WEBHOOK_ID,
+    CONF_WEBHOOK_SECRET,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL_MINUTES,
@@ -48,6 +52,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+CONF_ENABLE_WEBHOOK = "enable_webhook"
 NO_MEMBER = "__automation__"
 
 PASSWORD = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
@@ -193,7 +198,12 @@ class YakkaConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class YakkaOptionsFlow(OptionsFlow):
-    """Default member, user matching and polling."""
+    """Default member, user matching, polling and webhook."""
+
+    def __init__(self) -> None:
+        """Initialise the flow."""
+        self._options: dict[str, Any] = {}
+        self._webhook_id: str | None = None
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -201,11 +211,15 @@ class YakkaOptionsFlow(OptionsFlow):
         """General options."""
         options = self.config_entry.options
         if user_input is not None:
+            enable_webhook = user_input.pop(CONF_ENABLE_WEBHOOK)
             member = user_input.get(CONF_DEFAULT_MEMBER)
             if member in (None, NO_MEMBER):
                 user_input.pop(CONF_DEFAULT_MEMBER, None)
             user_input[CONF_SCAN_INTERVAL] = int(user_input[CONF_SCAN_INTERVAL])
-            return self.async_create_entry(data=user_input)
+            self._options = user_input
+            if enable_webhook:
+                return await self.async_step_webhook()
+            return self.async_create_entry(data=self._options)
 
         member_options = [SelectOptionDict(value=NO_MEMBER, label="Automation")]
         coordinator = getattr(self.config_entry, "runtime_data", None)
@@ -241,6 +255,46 @@ class YakkaOptionsFlow(OptionsFlow):
                         mode=NumberSelectorMode.BOX,
                     )
                 ),
+                vol.Required(
+                    CONF_ENABLE_WEBHOOK,
+                    default=bool(options.get(CONF_WEBHOOK_SECRET)),
+                ): BooleanSelector(),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
+
+    async def async_step_webhook(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show the webhook URL to paste into Yakka and take its signing secret."""
+        options = self.config_entry.options
+        if self._webhook_id is None:
+            # Keep the same id across re-shows of the form, and across edits.
+            self._webhook_id = options.get(CONF_WEBHOOK_ID) or webhook.async_generate_id()
+        webhook_id = self._webhook_id
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            secret = user_input[CONF_WEBHOOK_SECRET].strip()
+            if not secret.startswith("whsec_"):
+                errors[CONF_WEBHOOK_SECRET] = "invalid_secret"
+            else:
+                return self.async_create_entry(
+                    data={
+                        **self._options,
+                        CONF_WEBHOOK_ID: webhook_id,
+                        CONF_WEBHOOK_SECRET: secret,
+                    }
+                )
+        try:
+            url = webhook.async_generate_url(self.hass, webhook_id)
+        except NoURLAvailableError:
+            url = webhook.async_generate_path(webhook_id)
+        return self.async_show_form(
+            step_id="webhook",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema({vol.Required(CONF_WEBHOOK_SECRET): PASSWORD}),
+                {CONF_WEBHOOK_SECRET: options.get(CONF_WEBHOOK_SECRET, "")},
+            ),
+            description_placeholders={"webhook_url": url},
+            errors=errors,
+        )

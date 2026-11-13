@@ -50,14 +50,29 @@
         "data": {
           "default_member": "Record completions as",
           "match_users": "Match Home Assistant users to members",
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "enable_webhook": "Receive Yakka webhooks"
         },
         "data_description": {
           "default_member": "Who chores ticked off from Home Assistant are recorded as. \"Automation\" records them without a member.",
           "match_users": "When a Home Assistant user ticks a chore off and their name matches a Yakka member, record it as that member instead.",
-          "scan_interval": "How often to poll Yakka for changes."
+          "scan_interval": "How often to poll Yakka for changes.",
+          "enable_webhook": "Get instant updates and a yakka_event for every completion, undo, due and overdue chore."
+        }
+      },
+      "webhook": {
+        "title": "Yakka webhook",
+        "description": "On the group's **Integrations** page in Yakka, add an outbound webhook with this URL and choose the events you want:\n\n`{webhook_url}`\n\nThen paste its signing secret below. Yakka must be able to reach this address: use your external URL if you use the public Yakka instance.",
+        "data": {
+          "webhook_secret": "Signing secret"
+        },
+        "data_description": {
+          "webhook_secret": "Starts with whsec_."
         }
       }
+    },
+    "error": {
+      "invalid_secret": "Signing secrets start with whsec_."
     }
   },
   "entity": {
