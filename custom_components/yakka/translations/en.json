@@ -61,6 +61,11 @@
     }
   },
   "entity": {
+    "button": {
+      "complete": {
+        "name": "Complete"
+      }
+    },
     "sensor": {
       "status": {
         "name": "Status",
@@ -89,6 +94,28 @@
         "name": "Overdue chores",
         "unit_of_measurement": "chores"
       }
+    },
+    "todo": {
+      "chores": {
+        "name": "Chores"
+      }
+    }
+  },
+  "exceptions": {
+    "api_rejected": {
+      "message": "Yakka rejected the request ({code}): {message}"
+    },
+    "auth_failed": {
+      "message": "Yakka rejected the API token. Re-authenticate the integration."
+    },
+    "request_failed": {
+      "message": "Couldn't reach Yakka: {error}"
+    },
+    "chore_not_found": {
+      "message": "No such chore."
+    },
+    "nothing_to_undo": {
+      "message": "This chore has no completion to undo."
     }
   }
 }

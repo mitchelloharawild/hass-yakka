@@ -11,7 +11,7 @@ from .api import YakkaClient
 from .const import CONF_BASE_URL, CONF_GROUP_ID, CONF_TOKEN, DOMAIN
 from .coordinator import YakkaConfigEntry, YakkaCoordinator
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BUTTON, Platform.SENSOR, Platform.TODO]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YakkaConfigEntry) -> bool:

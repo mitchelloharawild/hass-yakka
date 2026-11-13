@@ -34,3 +34,5 @@ STATUSES: Final = [
     STATUS_DONE,
     STATUS_UNSCHEDULED,
 ]
+# Statuses that mean "there is something to do now".
+ACTIONABLE_STATUSES: Final = frozenset({STATUS_DUE, STATUS_OVERDUE})
