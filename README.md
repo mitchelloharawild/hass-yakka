@@ -98,6 +98,9 @@ The `yakka.complete_chore` action can also name the member directly.
 Copy `custom_components/yakka` into your Home Assistant `config/custom_components/`
 folder and restart.
 
+The Yakka logo appears in Home Assistant 2026.3 and later. Earlier versions
+show a placeholder icon, but everything else works.
+
 ## Setup
 
 1. In Yakka, open your group and go to **Integrations**. Create an **API token**
