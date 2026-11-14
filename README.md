@@ -87,7 +87,18 @@ The `yakka.complete_chore` action can also name the member directly.
 
 ## Installation
 
-### HACS
+### Marketplace (Home Assistant 2026.11 and later)
+
+1. Go to **Settings** → **Marketplace**, select **Add from link**, and enter
+   `https://github.com/mitchelloharawild/hass-yakka`.
+2. Open **Yakka**, select **Install**, and restart Home Assistant when asked.
+
+Yakka is added as a custom repository. The Marketplace only checks custom
+repositories for updates when you've connected GitHub, and then only every
+48 hours. To connect GitHub, open the **Marketplace** integration's ⋮ menu and
+select **Reconfigure**.
+
+### HACS (before Home Assistant 2026.11)
 
 1. In HACS, open the menu → **Custom repositories**, and add
    `https://github.com/mitchelloharawild/hass-yakka` as an **Integration**.
