@@ -30,26 +30,34 @@ from .const import (
     SERVICE_UNDO_COMPLETION,
 )
 from .coordinator import YakkaCoordinator
-from .helpers import async_complete, async_undo, async_undo_last
+from .helpers import async_complete, async_undo, async_undo_last, chores_in_target
 
-COMPLETE_SCHEMA = vol.Schema(
-    {
-        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_CHORE): cv.string,
-        vol.Optional(ATTR_MEMBER): cv.string,
-        vol.Optional(ATTR_NOTE): vol.All(cv.string, vol.Length(max=500)),
-        vol.Optional(ATTR_COMPLETED_AT): cv.datetime,
-    }
+# A target (one of a chore's entities) can stand in for the chore field.
+_TARGET_KEYS = tuple(str(key) for key in cv.ENTITY_SERVICE_FIELDS)
+
+COMPLETE_SCHEMA = vol.All(
+    vol.Schema(
+        {
+            **cv.ENTITY_SERVICE_FIELDS,
+            vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+            vol.Optional(ATTR_CHORE): cv.string,
+            vol.Optional(ATTR_MEMBER): cv.string,
+            vol.Optional(ATTR_NOTE): vol.All(cv.string, vol.Length(max=500)),
+            vol.Optional(ATTR_COMPLETED_AT): cv.datetime,
+        }
+    ),
+    cv.has_at_least_one_key(ATTR_CHORE, *_TARGET_KEYS),
 )
 UNDO_SCHEMA = vol.All(
     vol.Schema(
         {
+            **cv.ENTITY_SERVICE_FIELDS,
             vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
             vol.Exclusive(ATTR_COMPLETION_ID, "what"): cv.string,
             vol.Exclusive(ATTR_CHORE, "what"): cv.string,
         }
     ),
-    cv.has_at_least_one_key(ATTR_COMPLETION_ID, ATTR_CHORE),
+    cv.has_at_least_one_key(ATTR_COMPLETION_ID, ATTR_CHORE, *_TARGET_KEYS),
 )
 
 
@@ -108,14 +116,29 @@ def _resolve_chore(
     )
 
 
+def _chore_from_call(hass: HomeAssistant, call: ServiceCall) -> tuple[YakkaCoordinator, str]:
+    """The chore named by the chore field or, failing that, the target."""
+    entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)
+    if ATTR_CHORE in call.data:
+        return _resolve_chore(hass, entry_id, call.data[ATTR_CHORE])
+    # Only entities named outright count: a device target would cover every
+    # chore in the group, and completing them all is never what was meant.
+    chores = chores_in_target(hass, call.data, direct_only=True)
+    if len(chores) != 1:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="target_one_chore")
+    (target_entry_id, chore_id), *_ = chores
+    coordinator = _coordinator(hass, target_entry_id)
+    if coordinator.data is None or chore_id not in coordinator.data.chores:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="chore_not_found")
+    return coordinator, chore_id
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the integration's actions."""
 
     async def complete(call: ServiceCall) -> ServiceResponse:
-        coordinator, chore_id = _resolve_chore(
-            hass, call.data.get(ATTR_CONFIG_ENTRY_ID), call.data[ATTR_CHORE]
-        )
+        coordinator, chore_id = _chore_from_call(hass, call)
         member = call.data.get(ATTR_MEMBER)
         if member is None:
             member = await coordinator.async_member_for_context(call.context)
@@ -132,13 +155,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return _summary(response)
 
     async def undo(call: ServiceCall) -> ServiceResponse:
-        entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)
-        if ATTR_CHORE in call.data:
-            coordinator, chore_id = _resolve_chore(hass, entry_id, call.data[ATTR_CHORE])
-            response = await async_undo_last(coordinator, chore_id)
-        else:
-            coordinator = _coordinator(hass, entry_id)
+        if ATTR_COMPLETION_ID in call.data:
+            coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
             response = await async_undo(coordinator, call.data[ATTR_COMPLETION_ID])
+        else:
+            coordinator, chore_id = _chore_from_call(hass, call)
+            response = await async_undo_last(coordinator, chore_id)
         summary = _summary(response)
         summary["already_undone"] = bool(response.get("alreadyUndone"))
         return summary

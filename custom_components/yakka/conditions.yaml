@@ -1,0 +1,34 @@
+.chore_target: &chore_target
+  entity:
+    integration: yakka
+  device:
+    integration: yakka
+
+.behavior: &behavior
+  required: true
+  default: any
+  selector:
+    select:
+      translation_key: condition_behavior
+      options:
+        - any
+        - all
+
+.status_condition: &status_condition
+  target: *chore_target
+  fields:
+    behavior: *behavior
+
+chore_is_due: *status_condition
+chore_is_overdue: *status_condition
+chore_is_not_due: *status_condition
+
+chore_completed_by:
+  target: *chore_target
+  fields:
+    member:
+      required: true
+      example: "Alex"
+      selector:
+        text:
+    behavior: *behavior

@@ -45,5 +45,33 @@
     "undo_completion": {
       "service": "mdi:undo"
     }
+  },
+  "triggers": {
+    "chore_completed": {
+      "trigger": "mdi:check-circle"
+    },
+    "chore_undone": {
+      "trigger": "mdi:undo"
+    },
+    "chore_due": {
+      "trigger": "mdi:bell-ring-outline"
+    },
+    "chore_overdue": {
+      "trigger": "mdi:alert-circle-outline"
+    }
+  },
+  "conditions": {
+    "chore_is_due": {
+      "condition": "mdi:bell-ring-outline"
+    },
+    "chore_is_overdue": {
+      "condition": "mdi:alert-circle-outline"
+    },
+    "chore_is_not_due": {
+      "condition": "mdi:calendar-check"
+    },
+    "chore_completed_by": {
+      "condition": "mdi:account-check"
+    }
   }
 }

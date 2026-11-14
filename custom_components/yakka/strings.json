@@ -168,6 +168,9 @@
     },
     "entry_required": {
       "message": "Several Yakka groups are set up. Choose one with config_entry_id."
+    },
+    "target_one_chore": {
+      "message": "Target exactly one chore, by one of its entities."
     }
   },
   "services": {
@@ -177,7 +180,7 @@
       "fields": {
         "chore": {
           "name": "Chore",
-          "description": "The chore's title, its Yakka id, or the entity id of any of its entities."
+          "description": "The chore's title, its Yakka id, or the entity id of any of its entities. Or pick one of the chore's entities as the target."
         },
         "member": {
           "name": "Member",
@@ -203,7 +206,7 @@
       "fields": {
         "chore": {
           "name": "Chore",
-          "description": "Undo this chore's latest completion. The chore's title, its Yakka id, or the entity id of any of its entities."
+          "description": "Undo this chore's latest completion. The chore's title, its Yakka id, or the entity id of any of its entities. Or pick one of the chore's entities as the target."
         },
         "completion_id": {
           "name": "Completion id",
@@ -213,6 +216,78 @@
           "name": "Group",
           "description": "Which Yakka group. Only needed when several are set up."
         }
+      }
+    }
+  },
+  "triggers": {
+    "chore_completed": {
+      "name": "Chore completed",
+      "description": "Triggers when one of the targeted chores is completed. Use the \"Chore completed by\" condition to narrow it to a member."
+    },
+    "chore_undone": {
+      "name": "Chore completion undone",
+      "description": "Triggers when the latest completion of one of the targeted chores is undone."
+    },
+    "chore_due": {
+      "name": "Chore became due",
+      "description": "Triggers when one of the targeted chores becomes due."
+    },
+    "chore_overdue": {
+      "name": "Chore became overdue",
+      "description": "Triggers when one of the targeted chores becomes overdue."
+    }
+  },
+  "conditions": {
+    "chore_is_due": {
+      "name": "Chore is due",
+      "description": "Tests if the targeted chores are due or overdue.",
+      "fields": {
+        "behavior": {
+          "name": "Behavior",
+          "description": "With several chores targeted, whether any or all of them must match."
+        }
+      }
+    },
+    "chore_is_overdue": {
+      "name": "Chore is overdue",
+      "description": "Tests if the targeted chores are overdue.",
+      "fields": {
+        "behavior": {
+          "name": "Behavior",
+          "description": "With several chores targeted, whether any or all of them must match."
+        }
+      }
+    },
+    "chore_is_not_due": {
+      "name": "Chore isn't due",
+      "description": "Tests if the targeted chores are neither due nor overdue.",
+      "fields": {
+        "behavior": {
+          "name": "Behavior",
+          "description": "With several chores targeted, whether any or all of them must match."
+        }
+      }
+    },
+    "chore_completed_by": {
+      "name": "Chore completed by",
+      "description": "Tests if the latest completion of the targeted chores was by a member.",
+      "fields": {
+        "member": {
+          "name": "Member",
+          "description": "The member's name or Yakka id."
+        },
+        "behavior": {
+          "name": "Behavior",
+          "description": "With several chores targeted, whether any or all of them must match."
+        }
+      }
+    }
+  },
+  "selector": {
+    "condition_behavior": {
+      "options": {
+        "any": "Any",
+        "all": "All"
       }
     }
   }

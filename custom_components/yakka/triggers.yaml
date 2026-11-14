@@ -1,0 +1,11 @@
+.chore_target: &chore_target
+  target:
+    entity:
+      integration: yakka
+    device:
+      integration: yakka
+
+chore_completed: *chore_target
+chore_undone: *chore_target
+chore_due: *chore_target
+chore_overdue: *chore_target

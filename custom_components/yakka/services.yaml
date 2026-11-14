@@ -1,7 +1,9 @@
 complete_chore:
+  target: &chore_target
+    entity:
+      integration: yakka
   fields:
     chore:
-      required: true
       example: "Take out the bins"
       selector:
         text:
@@ -22,6 +24,7 @@ complete_chore:
           integration: yakka
 
 undo_completion:
+  target: *chore_target
   fields:
     chore:
       example: "Take out the bins"

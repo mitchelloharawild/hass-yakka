@@ -10,7 +10,12 @@ from types import ModuleType
 import pytest
 
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "yakka"
-HA_TESTS = ["test_automation.py", "test_config_flow.py", "test_init.py"]
+HA_TESTS = [
+    "test_automation.py",
+    "test_config_flow.py",
+    "test_init.py",
+    "test_target_automation.py",
+]
 
 try:
     import pytest_homeassistant_custom_component  # noqa: F401

@@ -9,11 +9,13 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.target import TargetSelection, async_extract_referenced_entity_ids
+from homeassistant.helpers.typing import ConfigType
 
 from .api import Chore, YakkaApiError, YakkaAuthError, YakkaError
 from .const import DOMAIN
-from .coordinator import YakkaCoordinator, group_device_identifier
+from .coordinator import YakkaCoordinator, chore_id_of_entity, group_device_identifier
 
 # API error codes caused by what the caller asked for, not by Yakka.
 _VALIDATION_CODES = {
@@ -129,3 +131,38 @@ def member_choices(coordinator: YakkaCoordinator | None) -> dict[str, str]:
     if coordinator is None or coordinator.data is None:
         return {}
     return {m.id: m.name for m in coordinator.data.members.values() if not m.archived}
+
+
+def chores_in_target(
+    hass: HomeAssistant, target: ConfigType, *, direct_only: bool = False
+) -> set[tuple[str, str]]:
+    """The chores a target selects, as {(config entry id, chore id)}.
+
+    Any of a chore's entities selects the chore; a device, area, floor or
+    label selects every chore whose entities it covers. With direct_only,
+    only entities named outright count.
+    """
+    selected = async_extract_referenced_entity_ids(
+        hass, TargetSelection(target), expand_group=False
+    )
+    entity_ids = selected.referenced
+    if not direct_only:
+        entity_ids = entity_ids | selected.indirectly_referenced
+    registry = er.async_get(hass)
+    chores: set[tuple[str, str]] = set()
+    for entity_id in entity_ids:
+        ent = registry.async_get(entity_id)
+        if ent is None or ent.platform != DOMAIN or ent.config_entry_id is None:
+            continue
+        entry = hass.config_entries.async_get_entry(ent.config_entry_id)
+        if entry is not None and (chore_id := chore_id_of_entity(entry, ent.unique_id)):
+            chores.add((entry.entry_id, chore_id))
+    return chores
+
+
+def loaded_coordinator(hass: HomeAssistant, entry_id: str) -> YakkaCoordinator | None:
+    """The coordinator of a loaded Yakka config entry."""
+    entry = hass.config_entries.async_get_entry(entry_id)
+    if entry is None or entry.domain != DOMAIN or entry.state is not ConfigEntryState.LOADED:
+        return None
+    return entry.runtime_data

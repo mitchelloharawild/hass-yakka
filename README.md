@@ -29,7 +29,42 @@ Chores added in Yakka show up automatically. Archived or deleted chores are remo
 
 ## Automations
 
-Pick the group's device in the automation editor and you get:
+The automation editor's add dialogs have two views, and Yakka shows up in both.
+
+### By target
+
+Pick the chores first, then what should happen. Expand the group's device and
+pick one of a chore's entities (any of them stands for that chore), or pick
+the device itself for all of its chores:
+
+| | |
+|---|---|
+| **Triggers** | Chore completed, chore completion undone, chore became due, chore became overdue. |
+| **Conditions** | Chore is due (or overdue), chore is overdue, chore isn't due, and chore completed by a given member (name or id). With several chores targeted, choose whether any or all must match. |
+| **Actions** | Complete chore and Undo completion. These need exactly one chore's entity as the target, so a device target won't complete every chore at once. |
+
+To act only on one member's completions, pair the trigger with the
+**Chore completed by** condition:
+
+```yaml
+triggers:
+  - trigger: yakka.chore_completed
+    target:
+      entity_id: sensor.home_bins_status
+conditions:
+  - condition: yakka.chore_completed_by
+    target:
+      entity_id: sensor.home_bins_status
+    options:
+      member: Sam
+```
+
+The trigger's variables are the `yakka_chore_event` data below, e.g.
+`{{ trigger.member }}`.
+
+### By type → Device
+
+Pick the group's device and you get:
 
 | | |
 |---|---|
@@ -144,7 +179,7 @@ the local address; the public instance needs your external URL (e.g. Nabu
 Casa). Every request's signature and timestamp are checked, and anything that
 fails is rejected.
 
-Each verified event triggers a refresh (and so the device triggers above)
+Each verified event triggers a refresh (and so the triggers above)
 and fires Yakka's raw event as a `yakka_event` on the event bus:
 
 ```yaml
@@ -184,7 +219,7 @@ automation:
 
 | Field | |
 |---|---|
-| `chore` | The chore's title (case-insensitive), its Yakka id, or the entity id of any of its entities. Required. |
+| `chore` | The chore's title (case-insensitive), its Yakka id, or the entity id of any of its entities. Required unless you target one of the chore's entities instead. |
 | `member` | Member name or id. Optional; see [Who gets credit](#who-gets-credit). |
 | `note` | Optional, up to 500 characters. |
 | `completed_at` | Optional; up to 14 days ago. |
@@ -210,8 +245,8 @@ automation:
 
 ### `yakka.undo_completion`
 
-Takes either a `chore` (as for `complete_chore`) to undo its latest
-completion, or a `completion_id` (from the **Last completed** sensor's
+Takes either a `chore` (as for `complete_chore`, or a target of one of the
+chore's entities) to undo its latest completion, or a `completion_id` (from the **Last completed** sensor's
 attributes or a `complete_chore` response), plus an optional `config_entry_id`.
 
 ## Privacy and security
