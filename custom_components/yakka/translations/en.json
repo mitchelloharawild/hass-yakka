@@ -84,12 +84,12 @@
   "entity": {
     "button": {
       "complete": {
-        "name": "Complete"
+        "name": "Complete {chore}"
       }
     },
     "sensor": {
       "status": {
-        "name": "Status",
+        "name": "{chore} status",
         "state": {
           "upcoming": "Upcoming",
           "due": "Due",
@@ -99,13 +99,13 @@
         }
       },
       "next_due": {
-        "name": "Next due"
+        "name": "{chore} next due"
       },
       "last_completed": {
-        "name": "Last completed"
+        "name": "{chore} last completed"
       },
       "assignee": {
-        "name": "Whose turn"
+        "name": "{chore} whose turn"
       },
       "due_chores": {
         "name": "Due chores",
@@ -120,6 +120,28 @@
       "chores": {
         "name": "Chores"
       }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "completed": "A chore was completed",
+      "undone": "A chore's completion was undone",
+      "due": "A chore became due",
+      "overdue": "A chore became overdue"
+    },
+    "condition_type": {
+      "is_due": "A chore is due",
+      "is_overdue": "A chore is overdue",
+      "is_not_due": "A chore isn't due"
+    },
+    "action_type": {
+      "complete": "Complete a chore",
+      "undo_last_completion": "Undo a chore's last completion"
+    },
+    "extra_fields": {
+      "chore_id": "Chore",
+      "member_id": "Member",
+      "note": "Note"
     }
   },
   "exceptions": {
@@ -177,11 +199,15 @@
     },
     "undo_completion": {
       "name": "Undo completion",
-      "description": "Undoes a completion in Yakka.",
+      "description": "Undoes a completion in Yakka: a chore's latest one, or a specific one.",
       "fields": {
+        "chore": {
+          "name": "Chore",
+          "description": "Undo this chore's latest completion. The chore's title, its Yakka id, or the entity id of any of its entities."
+        },
         "completion_id": {
           "name": "Completion id",
-          "description": "The completion's id, e.g. from the Last completed sensor's attributes or a complete_chore response."
+          "description": "Or undo this completion, e.g. from the Last completed sensor's attributes or a complete_chore response."
         },
         "config_entry_id": {
           "name": "Group",

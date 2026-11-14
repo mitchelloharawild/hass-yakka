@@ -4,13 +4,22 @@ from __future__ import annotations
 
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import YakkaClient
 from .const import CONF_BASE_URL, CONF_GROUP_ID, CONF_TOKEN, DOMAIN
-from .coordinator import YakkaConfigEntry, YakkaCoordinator
+from .coordinator import (
+    YakkaConfigEntry,
+    YakkaCoordinator,
+    chore_id_of_entity,
+    group_device_identifier,
+)
 from .services import async_setup_services
 from .webhook import async_register_webhook
 
@@ -39,7 +48,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: YakkaConfigEntry) -> boo
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     async_register_webhook(hass, entry)
 
-    entry.async_on_unload(coordinator.async_add_listener(_stale_device_remover(hass, entry)))
+    _remove_chore_devices(hass, entry)
+    remove_stale = _stale_entity_remover(hass, entry)
+    remove_stale()
+    entry.async_on_unload(coordinator.async_add_listener(remove_stale))
+    entry.async_on_unload(coordinator.async_start_chore_events())
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     return True
 
@@ -54,37 +67,27 @@ async def _async_reload(hass: HomeAssistant, entry: YakkaConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-def _chore_id_of(entry: YakkaConfigEntry, device: dr.DeviceEntry) -> str | None:
-    group_key = entry.unique_id or entry.entry_id
-    for domain, ident in device.identifiers:
-        if domain == DOMAIN and ident.startswith(f"{group_key}_"):
-            return ident[len(group_key) + 1 :]
-    return None
+def _remove_chore_devices(hass: HomeAssistant, entry: YakkaConfigEntry) -> None:
+    """Remove per-chore devices left by early versions; only the group is a device."""
+    registry = dr.async_get(hass)
+    group = group_device_identifier(entry)
+    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+        if group not in device.identifiers:
+            registry.async_update_device(device.id, remove_config_entry_id=entry.entry_id)
 
 
-def _stale_device_remover(hass: HomeAssistant, entry: YakkaConfigEntry):
-    """Remove the devices of chores that were archived or deleted in Yakka."""
+def _stale_entity_remover(hass: HomeAssistant, entry: YakkaConfigEntry):
+    """Remove the entities of chores that were archived or deleted in Yakka."""
 
     @callback
     def _remove() -> None:
         coordinator = entry.runtime_data
         if not coordinator.last_update_success or coordinator.data is None:
             return
-        registry = dr.async_get(hass)
-        for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
-            chore_id = _chore_id_of(entry, device)
+        registry = er.async_get(hass)
+        for ent in er.async_entries_for_config_entry(registry, entry.entry_id):
+            chore_id = chore_id_of_entity(entry, ent.unique_id)
             if chore_id and chore_id not in coordinator.data.chores:
-                registry.async_update_device(device.id, remove_config_entry_id=entry.entry_id)
+                registry.async_remove(ent.entity_id)
 
     return _remove
-
-
-async def async_remove_config_entry_device(
-    hass: HomeAssistant, entry: YakkaConfigEntry, device: dr.DeviceEntry
-) -> bool:
-    """Allow deleting a chore device by hand once the chore is gone."""
-    chore_id = _chore_id_of(entry, device)
-    if chore_id is None:
-        return False  # the group device
-    data = entry.runtime_data.data
-    return data is None or chore_id not in data.chores

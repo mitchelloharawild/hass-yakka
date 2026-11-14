@@ -22,7 +22,7 @@ from .api import Chore
 from .const import ACTIONABLE_STATUSES, DOMAIN, STATUS_OVERDUE
 from .coordinator import YakkaConfigEntry, YakkaCoordinator
 from .entity import YakkaGroupEntity
-from .helpers import async_complete, async_undo
+from .helpers import async_complete, async_undo_last
 
 PARALLEL_UPDATES = 1
 
@@ -90,9 +90,4 @@ class YakkaTodoList(YakkaGroupEntity, TodoListEntity):
             member = await self.coordinator.async_member_for_context(self._context)
             await async_complete(self.coordinator, chore.id, member=member)
         elif item.status == TodoItemStatus.NEEDS_ACTION and not is_open:
-            last = chore.last_completion
-            if last is None or last.undone_at is not None:
-                raise ServiceValidationError(
-                    translation_domain=DOMAIN, translation_key="nothing_to_undo"
-                )
-            await async_undo(self.coordinator, last.id)
+            await async_undo_last(self.coordinator, chore.id)

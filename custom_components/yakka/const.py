@@ -24,6 +24,9 @@ CONF_WEBHOOK_SECRET: Final = "webhook_secret"
 # A user linked to this records as the default member, never matched by name.
 USE_DEFAULT_MEMBER: Final = "__default__"
 
+# Keys of the entities each chore gets; unique ids are "{group}_{chore id}_{key}".
+CHORE_ENTITY_KEYS: Final = ("status", "next_due", "last_completed", "assignee", "complete")
+
 DEFAULT_SCAN_INTERVAL: Final = timedelta(minutes=5)
 MIN_SCAN_INTERVAL_MINUTES: Final = 1
 MAX_SCAN_INTERVAL_MINUTES: Final = 1440
@@ -46,6 +49,15 @@ ACTIONABLE_STATUSES: Final = frozenset({STATUS_DUE, STATUS_OVERDUE})
 
 # Event fired on the Home Assistant bus for every verified Yakka webhook.
 EVENT_YAKKA: Final = "yakka_event"
+
+# Event fired when an update shows a chore changed, with or without webhooks.
+# Device triggers are built on it.
+EVENT_YAKKA_CHORE: Final = "yakka_chore_event"
+CHORE_COMPLETED: Final = "completed"
+CHORE_UNDONE: Final = "undone"
+CHORE_DUE: Final = "due"
+CHORE_OVERDUE: Final = "overdue"
+CHORE_EVENT_TYPES: Final = (CHORE_COMPLETED, CHORE_UNDONE, CHORE_DUE, CHORE_OVERDUE)
 
 # Services
 SERVICE_COMPLETE_CHORE: Final = "complete_chore"

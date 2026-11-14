@@ -7,7 +7,7 @@ Yakka's signed webhooks make updates instant.
 
 ## What you get
 
-For each Yakka group you add:
+Each Yakka group you add is a device in Home Assistant, with:
 
 | Entity | What it shows |
 |---|---|
@@ -15,17 +15,50 @@ For each Yakka group you add:
 | `sensor.<group>_due_chores` | How many chores are due or overdue, with their titles as an attribute |
 | `sensor.<group>_overdue_chores` | How many chores are overdue |
 
-And a device for each chore with:
+And for each chore:
 
 | Entity | What it shows |
 |---|---|
-| `sensor.<chore>_status` | `upcoming`, `due`, `overdue`, `done` or `unscheduled`, with schedule details as attributes |
-| `sensor.<chore>_next_due` | When it's next due |
-| `sensor.<chore>_last_completed` | When it was last done, and by whom |
-| `sensor.<chore>_whose_turn` | The current assignee (fixed or round-robin chores) |
-| `button.<chore>_complete` | Ticks the chore off |
+| `sensor.<group>_<chore>_status` | `upcoming`, `due`, `overdue`, `done` or `unscheduled`, with schedule details as attributes |
+| `sensor.<group>_<chore>_next_due` | When it's next due |
+| `sensor.<group>_<chore>_last_completed` | When it was last done, and by whom |
+| `sensor.<group>_<chore>_whose_turn` | The current assignee (fixed or round-robin chores) |
+| `button.<group>_complete_<chore>` | Ticks the chore off |
 
 Chores added in Yakka show up automatically. Archived or deleted chores are removed.
+
+## Automations
+
+Pick the group's device in the automation editor and you get:
+
+| | |
+|---|---|
+| **Triggers** | A chore was completed (optionally by a given member), a completion was undone, a chore became due, a chore became overdue. Each can be narrowed to one chore, chosen from the group's chores. |
+| **Conditions** | A chore is due (or overdue), is overdue, or isn't due. |
+| **Actions** | Complete a chore (optionally as a given member, with a note), or undo its last completion. |
+
+The triggers work out what changed by comparing each update with the last, so
+they work with polling alone; [webhooks](#instant-updates-and-events-optional)
+make them fire within seconds rather than at the next poll. A chore that goes
+straight from upcoming to overdue between updates fires both "became due" and
+"became overdue". If a chore is completed and undone between two polls,
+neither fires.
+
+They're built on the `yakka_chore_event` event, which you can also use
+directly:
+
+```yaml
+event_type: yakka_chore_event
+data:
+  config_entry_id: "…"
+  device_id: "…"          # the group's device
+  chore_id: "cm…"
+  chore: "Bins"
+  type: completed         # completed, undone, due, overdue
+  completion_id: "…"      # completed and undone only
+  member_id: "…"
+  member: "Alex"
+```
 
 ### Who gets credit
 
@@ -97,7 +130,8 @@ the local address; the public instance needs your external URL (e.g. Nabu
 Casa). Every request's signature and timestamp are checked, and anything that
 fails is rejected.
 
-Each verified event triggers a refresh and fires a `yakka_event` on the event bus:
+Each verified event triggers a refresh (and so the device triggers above)
+and fires Yakka's raw event as a `yakka_event` on the event bus:
 
 ```yaml
 event_type: yakka_event
@@ -162,8 +196,9 @@ automation:
 
 ### `yakka.undo_completion`
 
-Takes a `completion_id` (from the **Last completed** sensor's attributes or a
-`complete_chore` response) and an optional `config_entry_id`.
+Takes either a `chore` (as for `complete_chore`) to undo its latest
+completion, or a `completion_id` (from the **Last completed** sensor's
+attributes or a `complete_chore` response), plus an optional `config_entry_id`.
 
 ## Privacy and security
 

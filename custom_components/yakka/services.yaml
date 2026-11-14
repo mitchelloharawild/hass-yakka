@@ -23,8 +23,11 @@ complete_chore:
 
 undo_completion:
   fields:
+    chore:
+      example: "Take out the bins"
+      selector:
+        text:
     completion_id:
-      required: true
       selector:
         text:
     config_entry_id:

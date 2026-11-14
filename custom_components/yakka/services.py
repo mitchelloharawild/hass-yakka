@@ -30,7 +30,7 @@ from .const import (
     SERVICE_UNDO_COMPLETION,
 )
 from .coordinator import YakkaCoordinator
-from .helpers import async_complete, async_undo
+from .helpers import async_complete, async_undo, async_undo_last
 
 COMPLETE_SCHEMA = vol.Schema(
     {
@@ -41,11 +41,15 @@ COMPLETE_SCHEMA = vol.Schema(
         vol.Optional(ATTR_COMPLETED_AT): cv.datetime,
     }
 )
-UNDO_SCHEMA = vol.Schema(
-    {
-        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_COMPLETION_ID): cv.string,
-    }
+UNDO_SCHEMA = vol.All(
+    vol.Schema(
+        {
+            vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
+            vol.Exclusive(ATTR_COMPLETION_ID, "what"): cv.string,
+            vol.Exclusive(ATTR_CHORE, "what"): cv.string,
+        }
+    ),
+    cv.has_at_least_one_key(ATTR_COMPLETION_ID, ATTR_CHORE),
 )
 
 
@@ -128,8 +132,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         return _summary(response)
 
     async def undo(call: ServiceCall) -> ServiceResponse:
-        coordinator = _coordinator(hass, call.data.get(ATTR_CONFIG_ENTRY_ID))
-        response = await async_undo(coordinator, call.data[ATTR_COMPLETION_ID])
+        entry_id = call.data.get(ATTR_CONFIG_ENTRY_ID)
+        if ATTR_CHORE in call.data:
+            coordinator, chore_id = _resolve_chore(hass, entry_id, call.data[ATTR_CHORE])
+            response = await async_undo_last(coordinator, chore_id)
+        else:
+            coordinator = _coordinator(hass, entry_id)
+            response = await async_undo(coordinator, call.data[ATTR_COMPLETION_ID])
         summary = _summary(response)
         summary["already_undone"] = bool(response.get("alreadyUndone"))
         return summary

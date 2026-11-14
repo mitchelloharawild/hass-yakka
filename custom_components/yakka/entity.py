@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
@@ -10,15 +10,14 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import Chore
-from .const import DOMAIN
-from .coordinator import YakkaConfigEntry, YakkaCoordinator
+from .coordinator import YakkaConfigEntry, YakkaCoordinator, group_device_identifier, group_key
 
 
 def group_device_info(coordinator: YakkaCoordinator) -> DeviceInfo:
     """The device that stands for the whole group."""
     entry = coordinator.config_entry
     return DeviceInfo(
-        identifiers={(DOMAIN, entry.unique_id or entry.entry_id)},
+        identifiers={group_device_identifier(entry)},
         name=entry.title,
         manufacturer="Yakka",
         model="Group",
@@ -36,13 +35,16 @@ class YakkaGroupEntity(CoordinatorEntity[YakkaCoordinator]):
         """Initialise the entity."""
         super().__init__(coordinator)
         entry = coordinator.config_entry
-        self._attr_unique_id = f"{entry.unique_id or entry.entry_id}_{key}"
+        self._attr_unique_id = f"{group_key(entry)}_{key}"
         self._attr_translation_key = key
         self._attr_device_info = group_device_info(coordinator)
 
 
 class YakkaChoreEntity(CoordinatorEntity[YakkaCoordinator]):
-    """An entity about one chore. Each chore is its own device."""
+    """An entity about one chore, on the group's device.
+
+    Entity names include the chore's title, e.g. "Home Bins status".
+    """
 
     _attr_has_entity_name = True
 
@@ -50,18 +52,17 @@ class YakkaChoreEntity(CoordinatorEntity[YakkaCoordinator]):
         """Initialise the entity."""
         super().__init__(coordinator)
         self.chore_id = chore.id
-        group_key = coordinator.config_entry.unique_id or coordinator.config_entry.entry_id
-        self._attr_unique_id = f"{group_key}_{chore.id}_{key}"
+        self._title = chore.title
+        self._attr_unique_id = f"{group_key(coordinator.config_entry)}_{chore.id}_{key}"
         self._attr_translation_key = key
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{group_key}_{chore.id}")},
-            name=chore.title,
-            manufacturer="Yakka",
-            model="Chore",
-            entry_type=DeviceEntryType.SERVICE,
-            via_device=(DOMAIN, group_key),
-            configuration_url=coordinator.client.group_url,
-        )
+        self._attr_device_info = group_device_info(coordinator)
+
+    @property
+    def translation_placeholders(self) -> Mapping[str, str]:
+        """The chore's title, for the entity name. Follows renames in Yakka."""
+        if chore := self.chore:
+            self._title = chore.title
+        return {"chore": self._title}
 
     @property
     def chore(self) -> Chore | None:
